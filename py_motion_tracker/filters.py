@@ -113,4 +113,3 @@ class KalmanFilter(Filter):
         self.x = self.x + np.dot(self.K, self.y)
         # new estimated uncertainty
         self.P = np.dot(self._I - np.dot(self.K, self.H), self.P)
-
