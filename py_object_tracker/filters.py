@@ -1,18 +1,7 @@
 import numpy as np
 
 
-class Filter:
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def update(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def predict(self, *args, **kwargs):
-        raise NotImplementedError
-
-
-class KalmanFilter(Filter):
+class KalmanFilter:
 
     """
     Implementation here does not consider estimate affected by external influence, i.e [control matrix,
@@ -23,8 +12,7 @@ class KalmanFilter(Filter):
 
     """
 
-    def __init__(self, dim_x, dim_z):
-        super().__init__(dim_x, dim_z)
+    def __init__(self, dim_x: int, dim_z: int):
         self.dim_x = dim_x
         self.dim_z = dim_z
 
@@ -77,7 +65,7 @@ class KalmanFilter(Filter):
         # motion always adds uncertainty, its makes the system uncertain
         self.P = np.dot(self.F, np.dot(self.P, self.F.T)) + self.Q
 
-    def update(self, z):
+    def correction(self, z: np.ndarray):
 
         """
         1. Calculate error between measurement and prediction
