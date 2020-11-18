@@ -3,7 +3,7 @@ from typing import List, Tuple
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
-from py_object_tracker.sort.tracker import KalmanTracker
+from py_tracker.sort.tracker import KalmanTracker
 
 
 class Sort:
