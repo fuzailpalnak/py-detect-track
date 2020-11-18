@@ -106,8 +106,13 @@ class Sort:
         iou_matrix = self.iou_between_detection_and_tracker(detections, trackers)
 
         # Hungarian Algorithm
-        matched_detection_tracker_x, matched_detection_tracker_y = linear_sum_assignment(-iou_matrix)
-        matched_detection_tracker_indices = np.array(list(zip(matched_detection_tracker_x, matched_detection_tracker_y)))
+        (
+            matched_detection_tracker_x,
+            matched_detection_tracker_y,
+        ) = linear_sum_assignment(-iou_matrix)
+        matched_detection_tracker_indices = np.array(
+            list(zip(matched_detection_tracker_x, matched_detection_tracker_y))
+        )
 
         for detection_iterator, detections in enumerate(detections):
             if detection_iterator not in matched_detection_tracker_indices[:, 0]:
