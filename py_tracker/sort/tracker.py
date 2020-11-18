@@ -1,6 +1,6 @@
 import numpy as np
 
-from py_object_tracker.filters import KalmanFilter
+from py_tracker.filters import KalmanFilter
 
 
 class TrackerId:
