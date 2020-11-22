@@ -48,7 +48,7 @@ class DeepSort:
 
         self.trackers = list()
 
-    def track(self, detections: List[DeepSortDetection]):
+    def _track(self, detections: List[DeepSortDetection]):
 
         for track in self.trackers:
             track.predict()
@@ -562,4 +562,4 @@ class DeepSort:
             )
             for detection, feature in zip(detections, features)
         ]
-        return self.track(detections)
+        return self._track(detections)
