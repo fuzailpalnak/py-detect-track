@@ -8,9 +8,6 @@ class TrackerId:
 
 
 class Tracker:
-    def __init__(self, *args, **kwargs):
-        pass
-
     def state(self):
         raise NotImplementedError
 
@@ -21,4 +18,7 @@ class Tracker:
         raise NotImplementedError
 
     def extract_position_from_state(self):
+        raise NotImplementedError
+
+    def bbox(self, *args, **kwargs):
         raise NotImplementedError
