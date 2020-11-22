@@ -91,7 +91,7 @@ class KalmanFilter:
 
         pht = np.dot(self.P, self.H.T)
 
-        # measurement prediction covariance on the time step k
+        # measurement and prediction covariance on the time step k
         self.S = np.dot(self.H, pht) + self.R
 
         # Kalman gain

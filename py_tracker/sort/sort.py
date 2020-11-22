@@ -3,6 +3,10 @@ from typing import List, Tuple
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
+from py_tracker.detection import (
+    from_scale_aspect_ratio_to_x_min_y_min_x_max_y_max,
+    from_x_min_y_min_x_max_y_max_to_scale_aspect_ratio,
+)
 from py_tracker.sort.tracker import KalmanTracker
 
 
@@ -14,7 +18,7 @@ class Sort:
         self.trackers: List[KalmanTracker] = list()
         self.frame_count: int = 0
 
-    def track(self, detections: np.ndarray) -> np.ndarray:
+    def track(self, detections: list) -> List:
         """
 
         :param detections: of format [x1, y1, x2, y2] or [x1, y1, x2, y2, score]
@@ -22,7 +26,7 @@ class Sort:
         """
         self.frame_count += 1
 
-        detections = detections[:, 0:4]
+        detections = np.array(detections)[:, 0:4]
 
         predicted_tracks = np.zeros((len(self.trackers), 4))
         matched_detection_tracker_indices = np.empty((0, 2), dtype=int)
@@ -34,9 +38,9 @@ class Sort:
         for track_iterator, empty_state in enumerate(predicted_tracks):
             track = self.trackers[track_iterator]
             track.predict()
-            state = self.scale_aspect_ratio_fmt_to_bbox_fmt(
+            state = from_scale_aspect_ratio_to_x_min_y_min_x_max_y_max(
                 track.extract_position_from_state()
-            )[0]
+            ).reshape(1, 4)[0]
             empty_state[:] = [state[0], state[1], state[2], state[3]]
             if np.any(np.isnan(state)):
                 to_del.append(track_iterator)
@@ -54,7 +58,7 @@ class Sort:
         # Update the matched tracking
         for detection_index, tracker_index in matched_detection_tracker_indices:
             self.trackers[tracker_index].update(
-                self.bbox_fmt_to_scale_aspect_ratio_fmt(
+                from_x_min_y_min_x_max_y_max_to_scale_aspect_ratio(
                     detections[detection_index, :].reshape(4, 1)
                 )
             )
@@ -63,7 +67,7 @@ class Sort:
         for unmatched_detection_id in unmatched_detections_ids:
             self.trackers.append(
                 KalmanTracker(
-                    self.bbox_fmt_to_scale_aspect_ratio_fmt(
+                    from_x_min_y_min_x_max_y_max_to_scale_aspect_ratio(
                         detections[unmatched_detection_id, :].reshape(4, 1)
                     )
                 )
@@ -71,24 +75,21 @@ class Sort:
 
         # Creation and Deletion of Track Identities
         for individual_track in reversed(self.trackers):
-            state = self.scale_aspect_ratio_fmt_to_bbox_fmt(
-                individual_track.extract_position_from_state()
-            )[0]
+            # state = from_scale_aspect_ratio_to_x_min_y_min_x_max_y_max(
+            #     individual_track.extract_position_from_state()
+            # ).reshape(1, 4)[0]
 
             # If the tracker is being updated every self.max_age frame
             if individual_track.time_since_update < self.max_age:
-                detections_with_active_tracks.append(
-                    np.concatenate((state, [individual_track.id + 1])).reshape(1, -1)
-                )
+                # detections_with_active_tracks.append(
+                #     np.concatenate((state, [individual_track.id + 1])).reshape(1, -1)
+                # )
+                detections_with_active_tracks.append(individual_track)
             # Remove tracker if not updated for self.max_age frame
             elif individual_track.time_since_update > self.max_age:
                 self.trackers.remove(individual_track)
 
-        return (
-            np.concatenate(detections_with_active_tracks)
-            if len(detections_with_active_tracks) > 0
-            else np.empty((0, 4))
-        )
+        return detections_with_active_tracks
 
     def associate_detections_to_trackers(
         self, detections: np.ndarray, trackers: np.ndarray
@@ -161,57 +162,3 @@ class Sort:
             - wh
         )
         return o
-
-    @staticmethod
-    def bbox_fmt_to_scale_aspect_ratio_fmt(bbox: np.ndarray) -> np.ndarray:
-        """
-
-        :param bbox:
-        :return:
-        """
-
-        assert bbox.ndim == 2, (
-            "Expected bbox to be one dimensional" "got %s",
-            (bbox.ndim,),
-        )
-
-        assert bbox.shape == (4, 1), (
-            "Expected bbox to have shape '[4, 1]'" "got %s",
-            (bbox.shape,),
-        )
-
-        w = bbox[2] - bbox[0]
-        h = bbox[3] - bbox[1]
-        x = bbox[0] + w / 2.0
-        y = bbox[1] + h / 2.0
-        s = w * h
-        r = w / float(h)
-        return np.array([x, y, s, r]).reshape((4, 1))
-
-    @staticmethod
-    def scale_aspect_ratio_fmt_to_bbox_fmt(scale_aspect: np.ndarray) -> np.ndarray:
-        """
-
-        :param scale_aspect:
-        :return:
-        """
-        assert scale_aspect.ndim == 2, (
-            "Expected scale_aspect to be one dimensional" "got %s",
-            (scale_aspect.ndim,),
-        )
-
-        assert scale_aspect.shape == (4, 1), (
-            "Expected scale_aspect to have shape '[4, 1]'" "got %s",
-            (scale_aspect.shape,),
-        )
-
-        w = np.sqrt(scale_aspect[2] * scale_aspect[3])
-        h = scale_aspect[2] / w
-        return np.array(
-            [
-                scale_aspect[0] - w / 2.0,
-                scale_aspect[1] - h / 2.0,
-                scale_aspect[0] + w / 2.0,
-                scale_aspect[1] + h / 2.0,
-            ]
-        ).reshape((1, 4))

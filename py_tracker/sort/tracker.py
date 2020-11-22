@@ -1,37 +1,13 @@
 import numpy as np
 
+from py_tracker.detection import from_scale_aspect_ratio_to_x_min_y_min_x_max_y_max
 from py_tracker.filters import KalmanFilter
-
-
-class TrackerId:
-    _tracker_id = -1
-
-    @staticmethod
-    def tracker_id():
-        TrackerId._tracker_id += 1
-        return TrackerId._tracker_id
-
-
-class Tracker:
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def state(self):
-        raise NotImplementedError
-
-    def update(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def predict(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def extract_position_from_state(self):
-        raise NotImplementedError
+from py_tracker.tracker import Tracker, TrackerId
 
 
 class KalmanTracker(Tracker):
     def __init__(self, measurement):
-        super().__init__(measurement)
+        super().__init__()
 
         self._filter = KalmanFilter(dim_x=7, dim_z=4)
 
@@ -91,6 +67,11 @@ class KalmanTracker(Tracker):
         :return: state
         """
         return self._filter.x
+
+    def bbox(self, *args, **kwargs):
+        return from_scale_aspect_ratio_to_x_min_y_min_x_max_y_max(
+            self.extract_position_from_state()
+        ).reshape(4, 1)
 
     def update(self, measurement: np.ndarray):
         """
