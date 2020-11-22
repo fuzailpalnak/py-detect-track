@@ -18,7 +18,7 @@ class Sort:
         self.trackers: List[KalmanTracker] = list()
         self.frame_count: int = 0
 
-    def track(self, detections: list) -> np.ndarray:
+    def track(self, detections: list) -> List:
         """
 
         :param detections: of format [x1, y1, x2, y2] or [x1, y1, x2, y2, score]
@@ -75,24 +75,21 @@ class Sort:
 
         # Creation and Deletion of Track Identities
         for individual_track in reversed(self.trackers):
-            state = from_scale_aspect_ratio_to_x_min_y_min_x_max_y_max(
-                individual_track.extract_position_from_state()
-            ).reshape(1, 4)[0]
+            # state = from_scale_aspect_ratio_to_x_min_y_min_x_max_y_max(
+            #     individual_track.extract_position_from_state()
+            # ).reshape(1, 4)[0]
 
             # If the tracker is being updated every self.max_age frame
             if individual_track.time_since_update < self.max_age:
-                detections_with_active_tracks.append(
-                    np.concatenate((state, [individual_track.id + 1])).reshape(1, -1)
-                )
+                # detections_with_active_tracks.append(
+                #     np.concatenate((state, [individual_track.id + 1])).reshape(1, -1)
+                # )
+                detections_with_active_tracks.append(individual_track)
             # Remove tracker if not updated for self.max_age frame
             elif individual_track.time_since_update > self.max_age:
                 self.trackers.remove(individual_track)
 
-        return (
-            np.concatenate(detections_with_active_tracks)
-            if len(detections_with_active_tracks) > 0
-            else np.empty((0, 4))
-        )
+        return detections_with_active_tracks
 
     def associate_detections_to_trackers(
         self, detections: np.ndarray, trackers: np.ndarray
