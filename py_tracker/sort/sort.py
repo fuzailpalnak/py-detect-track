@@ -7,7 +7,7 @@ from py_tracker.detection import (
     from_scale_aspect_ratio_to_x_min_y_min_x_max_y_max,
     from_x_min_y_min_x_max_y_max_to_scale_aspect_ratio,
 )
-from py_tracker.sort.tracker import KalmanTracker
+from py_tracker.sort.sort_tracker import KalmanTracker
 
 
 class Sort:
