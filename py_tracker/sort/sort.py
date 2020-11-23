@@ -12,11 +12,11 @@ from py_tracker.sort.tracker import KalmanTracker
 
 class Sort:
     def __init__(self, max_age: int = 1, iou_threshold: float = 0.40):
-        self.max_age: int = max_age
-        self.iou_threshold: float = iou_threshold
+        self._max_age: int = max_age
+        self._iou_threshold: float = iou_threshold
 
         self.trackers: List[KalmanTracker] = list()
-        self.frame_count: int = 0
+        self._frame_count: int = 0
 
     def track(self, detections: list) -> List:
         """
@@ -24,7 +24,7 @@ class Sort:
         :param detections: of format [x1, y1, x2, y2] or [x1, y1, x2, y2, score]
         :return:
         """
-        self.frame_count += 1
+        self._frame_count += 1
 
         detections = np.array(detections)[:, 0:4]
 
@@ -53,7 +53,7 @@ class Sort:
             (
                 matched_detection_tracker_indices,
                 unmatched_detections_ids,
-            ) = self.associate_detections_to_trackers(detections, predicted_tracks)
+            ) = self._associate_detections_to_trackers(detections, predicted_tracks)
 
         # Update the matched tracking
         for detection_index, tracker_index in matched_detection_tracker_indices:
@@ -80,18 +80,18 @@ class Sort:
             # ).reshape(1, 4)[0]
 
             # If the tracker is being updated every self.max_age frame
-            if individual_track.time_since_update < self.max_age:
+            if individual_track.time_since_update < self._max_age:
                 # detections_with_active_tracks.append(
                 #     np.concatenate((state, [individual_track.id + 1])).reshape(1, -1)
                 # )
                 detections_with_active_tracks.append(individual_track)
             # Remove tracker if not updated for self.max_age frame
-            elif individual_track.time_since_update > self.max_age:
+            elif individual_track.time_since_update > self._max_age:
                 self.trackers.remove(individual_track)
 
         return detections_with_active_tracks
 
-    def associate_detections_to_trackers(
+    def _associate_detections_to_trackers(
         self, detections: np.ndarray, trackers: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
 
@@ -104,7 +104,7 @@ class Sort:
         matches = list()
         unmatched_detections = list()
 
-        iou_matrix = self.iou_between_detection_and_tracker(detections, trackers)
+        iou_matrix = self._iou_between_detection_and_tracker(detections, trackers)
 
         # Hungarian Algorithm
         (
@@ -123,7 +123,7 @@ class Sort:
         # of an un tracked object. The tracker is initialised using the geometry of the bounding box with the velocity
         # set to zero
         for detection_index, tracker_index in matched_detection_tracker_indices:
-            if iou_matrix[detection_index, tracker_index] < self.iou_threshold:
+            if iou_matrix[detection_index, tracker_index] < self._iou_threshold:
                 unmatched_detections.append(detection_index)
             else:
                 matches.append(np.array([detection_index, tracker_index]).reshape(1, 2))
@@ -135,7 +135,7 @@ class Sort:
         )
 
     @staticmethod
-    def iou_between_detection_and_tracker(
+    def _iou_between_detection_and_tracker(
         detections: np.ndarray, trackers: np.ndarray
     ) -> np.ndarray:
         """
