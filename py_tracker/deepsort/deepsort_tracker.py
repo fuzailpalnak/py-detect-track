@@ -1,5 +1,3 @@
-from enum import Enum
-
 import numpy as np
 import scipy
 
@@ -11,7 +9,7 @@ from py_tracker.filters import KalmanFilter
 from py_tracker.tracker import Tracker, TrackerId
 
 
-class DeepSortTrackerState(Enum):
+class DeepSortTrackerState:
     """
     Newly created tracks are
     classified as `tentative` until enough evidence has been collected. Then,
@@ -21,9 +19,48 @@ class DeepSortTrackerState(Enum):
 
     """
 
-    Tentative = "tentative"
-    Confirmed = "confirmed"
-    Deleted = "deleted"
+    def __init__(
+        self, tentative: bool = False, confirmed: bool = False, deleted: bool = False
+    ):
+        self._tentative = tentative
+        self._confirmed = confirmed
+        self._deleted = deleted
+
+    @property
+    def tentative(self):
+        return self._tentative
+
+    @tentative.setter
+    def tentative(self, value):
+        self._tentative = value
+
+    @property
+    def confirmed(self):
+        return self._confirmed
+
+    @confirmed.setter
+    def confirmed(self, value):
+        self._confirmed = value
+
+    @property
+    def deleted(self):
+        return self._deleted
+
+    @deleted.setter
+    def deleted(self, value):
+        self._deleted = value
+
+    @classmethod
+    def tentative_tracker_state(cls):
+        return DeepSortTrackerState(tentative=True)
+
+    @classmethod
+    def confirmed_tracker_state(cls):
+        return DeepSortTrackerState(confirmed=True)
+
+    @classmethod
+    def deleted_tracker_state(cls):
+        return DeepSortTrackerState(deleted=True)
 
 
 class DeepSortKalmanTracker(Tracker):
@@ -39,10 +76,6 @@ class DeepSortKalmanTracker(Tracker):
         # Tracks that exceed a predefined maximum age Amax are considered to have left the scene and are
         # deleted from the track set
         self._max_age = max_age
-
-        # New track hypotheses are initiated for each detection that cannot be associated to an existing track
-        # These new tracks are classified as tentative during their first three frames
-        self.track_state = DeepSortTrackerState.Tentative
 
         self.features = list()
         if feature is not None:
@@ -99,6 +132,11 @@ class DeepSortKalmanTracker(Tracker):
         self.track_id = TrackerId.tracker_id()
         self.time_since_update = 0
 
+        # New track hypotheses are initiated for each detection that cannot be associated to an existing track
+        # These new tracks are classified as tentative during their first three frames
+        self._tracker_state = None
+        self.mark_state_tentative()
+
     def extract_position_from_state(self):
         """
         Extract position from the state
@@ -150,11 +188,8 @@ class DeepSortKalmanTracker(Tracker):
 
         # New track hypotheses are initiated for each detection that cannot be associated to an existing track
         # These new tracks are classified as tentative during their first three frames
-        if (
-            self.track_state == DeepSortTrackerState.Tentative
-            and self._hits >= self._n_init
-        ):
-            self.track_state = DeepSortTrackerState.Confirmed
+        if self.is_tentative() and self._hits >= self._n_init:
+            self.mark_state_confirmed()
 
     def predict(self):
         """
@@ -216,21 +251,29 @@ class DeepSortKalmanTracker(Tracker):
 
         return np.sum(distance * distance, axis=0)
 
+    def mark_state_tentative(self):
+        self._tracker_state = DeepSortTrackerState.tentative_tracker_state()
+
+    def mark_state_confirmed(self):
+        self._tracker_state = DeepSortTrackerState.confirmed_tracker_state()
+
+    def mark_state_deleted(self):
+        self._tracker_state = DeepSortTrackerState.deleted_tracker_state()
+
     def mark_missed(self):
         # Tracks that are not successfully associated to a measurement within their first three frames are deleted
-        if self.track_state == DeepSortTrackerState.Tentative:
-            self.track_state = DeepSortTrackerState.Deleted
-
+        if self.is_tentative():
+            self.mark_state_deleted()
         # Tracks that exceed a predefined maximum age Amax are considered to have left the scene and
         # are deleted from the track set
         elif self.time_since_update > self._max_age:
-            self.track_state = DeepSortTrackerState.Deleted
+            self.mark_state_deleted()
 
     def is_tentative(self):
-        return self.track_state == DeepSortTrackerState.Tentative
+        return self._tracker_state.tentative
 
     def is_confirmed(self):
-        return self.track_state == DeepSortTrackerState.Confirmed
+        return self._tracker_state.confirmed
 
     def is_deleted(self):
-        return self.track_state == DeepSortTrackerState.Deleted
+        return self._tracker_state.deleted
