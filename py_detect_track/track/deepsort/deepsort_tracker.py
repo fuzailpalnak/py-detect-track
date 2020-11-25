@@ -1,12 +1,12 @@
 import numpy as np
 import scipy
 
-from py_tracker.detection import (
+from py_detect_track.detect.detection import (
     from_x_y_aspect_height_to_x_y_width_height,
     from_x_y_width_height_to_x_min_y_min_x_max_y_max,
 )
-from py_tracker.filters import KalmanFilter
-from py_tracker.tracker import Tracker, TrackerId
+from py_detect_track.filters import KalmanFilter
+from py_detect_track.track.tracker import Tracker, TrackerId
 
 
 class DeepSortTrackerState:

@@ -1,8 +1,8 @@
 import numpy as np
 
-from py_tracker.detection import from_scale_aspect_ratio_to_x_min_y_min_x_max_y_max
-from py_tracker.filters import KalmanFilter
-from py_tracker.tracker import Tracker, TrackerId
+from py_detect_track.detect.detection import from_scale_aspect_ratio_to_x_min_y_min_x_max_y_max
+from py_detect_track.filters import KalmanFilter
+from py_detect_track.track.tracker import Tracker, TrackerId
 
 
 class KalmanTracker(Tracker):
