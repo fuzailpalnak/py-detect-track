@@ -5,7 +5,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 from py_detect_track.track.deepsort.deepsort_tracker import DeepSortKalmanTracker
-from py_detect_track.detect.detection import (
+from py_detect_track.detect.utils import (
     from_x_y_width_height_to_x_y_aspect_height,
     from_x_y_aspect_height_to_x_y_width_height,
 )

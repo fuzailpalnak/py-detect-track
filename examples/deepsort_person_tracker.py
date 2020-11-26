@@ -14,7 +14,7 @@ from py_detect_track.track import DeepSort
 from py_detect_track.detect.yolo3 import YOLODetector
 from py_detect_track.detect.appearance.deepsort_identification import create_box_encoder
 from py_detect_track.track.deepsort.deepsort import DeepSortDetection
-from py_detect_track.detect.detection import (
+from py_detect_track.detect.utils import (
     non_max_suppression,
     from_x_y_width_height_to_x_min_y_min_x_max_y_max,
     from_x_y_aspect_height_to_x_y_width_height,
