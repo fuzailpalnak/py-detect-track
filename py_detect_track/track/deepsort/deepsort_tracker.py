@@ -64,7 +64,7 @@ class DeepSortTrackerState:
 
 
 class DeepSortKalmanTracker(Tracker):
-    def __init__(self, measurement, feature, max_age: int = 30):
+    def __init__(self, measurement, appearance_feature, max_age: int = 30):
         super().__init__()
 
         self._hits = 1
@@ -77,9 +77,9 @@ class DeepSortKalmanTracker(Tracker):
         # deleted from the track set
         self._max_age = max_age
 
-        self.features = list()
-        if feature is not None:
-            self.features.append(feature)
+        self.appearance_features = list()
+        if appearance_feature is not None:
+            self.appearance_features.append(appearance_feature)
 
         # Motion and observation uncertainty are chosen relative to the current
         # state estimate. These weights control the amount of uncertainty in

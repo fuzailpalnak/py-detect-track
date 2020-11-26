@@ -31,11 +31,11 @@ def _cosine_distance(a, b, data_is_normalized=False):
 
 
 class DeepSortDetection:
-    def __init__(self, detection, feature):
+    def __init__(self, detection, appearance_feature):
         super().__init__()
         # (x, y, w, h)
         self.detection = detection
-        self.feature = feature
+        self.appearance_feature = appearance_feature
 
 
 class DeepSort:
@@ -95,7 +95,7 @@ class DeepSort:
                     from_x_y_width_height_to_x_y_aspect_height(
                         detections[detection_idx].detection
                     ).reshape(4, 1),
-                    detections[detection_idx].feature,
+                    detections[detection_idx].appearance_feature,
                     self._max_age,
                 )
             )
@@ -103,16 +103,16 @@ class DeepSort:
 
         # Update distance metric.
         active_targets = [t.track_id for t in self.trackers if t.is_confirmed()]
-        features, targets = [], []
+        appearance_features, targets = [], []
         for track in self.trackers:
             if not track.is_confirmed():
                 continue
-            features += track.features
-            targets += [track.track_id for _ in track.features]
+            appearance_features += track.appearance_features
+            targets += [track.track_id for _ in track.appearance_features]
 
         # Further, we keep a gallery Rk of the last Lk = 100 associated appearance descriptors for each track k.
         self._update_appearance_meta(
-            np.asarray(features), np.asarray(targets), active_targets
+            np.asarray(appearance_features), np.asarray(targets), active_targets
         )
 
         return self.trackers
@@ -399,7 +399,7 @@ class DeepSort:
         # integrate a second metric into the assignment problem
         # we compute an appearance descriptor
         cost_matrix = self._appearance_cost(
-            np.array([detections[i].feature for i in detection_indices]),
+            np.array([detections[i].appearance_feature for i in detection_indices]),
             np.array([trackers[i].track_id for i in track_indices]),
             cost_matrix,
         )
@@ -548,18 +548,28 @@ class DeepSort:
             cost_matrix[row, :] = 1.0 - self.iou(bbox, candidates)
         return cost_matrix
 
-    def track_with_detections_and_features(self, detections: List, features: List):
+    def track_with_detections_and_appearance_features(
+        self, detections: List, appearance_features: List
+    ):
         """
 
         :param detections: (x, y, w, h)
-        :param features:
+        :param appearance_features:
         :return:
         """
         detections = [
             DeepSortDetection(
                 np.asarray(detection, dtype=np.float),
-                np.asarray(feature, dtype=np.float32),
+                np.asarray(appearance_feature, dtype=np.float32),
             )
-            for detection, feature in zip(detections, features)
+            for detection, appearance_feature in zip(detections, appearance_features)
         ]
+        return self._track(detections)
+
+    def track_with_detection_object(self, detections: List[DeepSortDetection]):
+        """
+
+        :param detections:
+        :return:
+        """
         return self._track(detections)
